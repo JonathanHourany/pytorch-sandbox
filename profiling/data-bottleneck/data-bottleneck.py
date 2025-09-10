@@ -18,7 +18,7 @@ class ToyModel(nn.Module):
         super().__init__()
 
         self.net = nn.Sequential(
-            nn.Linear(512, 256),
+            nn.Linear(2010, 256),
             nn.ReLU(),
             nn.Linear(256, 128),
             nn.ReLU(),
@@ -39,7 +39,7 @@ def write_key_averages(file_path: Path, cpu_profile, gpu_profile=None):
             fp.write(gpu_profile)
 
 
-def main(num_loader_workers=0):
+def main(num_loader_workers=0, batch_size=1024):
     print_cuda_prof = False
     gpu_profile = None
 
@@ -52,15 +52,15 @@ def main(num_loader_workers=0):
         )
         device = torch.device("cpu")
 
-    X = torch.randn(50_000, 512)
+    X = torch.randn(50_000, 2010)
     y = torch.randint(low=0, high=2, size=(50_000,), dtype=torch.float32)
 
     dataset = TensorDataset(X, y)
-    loader = DataLoader(dataset=dataset, batch_size=64, num_workers=num_loader_workers)
+    loader = DataLoader(dataset=dataset, batch_size=batch_size, num_workers=num_loader_workers)
 
     prof_schedule = schedule(wait=1, warmup=1, active=3, repeat=1)
 
-    model = ToyModel()
+    model = ToyModel().to(device)
     criterion = nn.BCEWithLogitsLoss()
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
 
@@ -97,16 +97,17 @@ def main(num_loader_workers=0):
             )
             print(gpu_profile)
 
-        file_path = Path(f"profiler-output/num-workers-{num_loader_workers}")
+        run_details = f"num-workers-{num_loader_workers}-batch-size-{batch_size}"
+        file_path = Path(f"profiler-output/{run_details}")
         file_path.mkdir(parents=True)
+        
         write_key_averages(
             file_path=file_path, cpu_profile=cpu_profile, gpu_profile=gpu_profile
         )
-
-        prof.export_chrome_trace(str(file_path / "trace.json"))
-        prof.export_memory_timeline(str(file_path / "memory.html"))
-        prof.export_stacks(str(file_path / "stacks.json"))
+        prof.export_chrome_trace(str(file_path / f"trace-{run_details}.json"))
+        prof.export_memory_timeline(str(file_path / f"memory-{run_details}.html"))
+        prof.export_stacks(str(file_path / f"stacks-{run_details}.json"))
 
 
 if __name__ == "__main__":
-    main(num_loader_workers=4)
+    main(num_loader_workers=0, batch_size=2048)
