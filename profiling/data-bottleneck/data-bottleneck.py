@@ -41,7 +41,9 @@ def write_key_averages(file_path: Path, cpu_profile, gpu_profile=None):
 
 def main(num_loader_workers=0, batch_size=1024):
     print_cuda_prof = False
-    gpu_profile = None
+    run_details = f"num-workers-{num_loader_workers}-batch-size-{batch_size}"
+    file_path = Path(f"profiler-output/{run_details}")
+    file_path.mkdir(parents=True)
 
     if torch.cuda.is_available():
         device = torch.device("cuda")
@@ -96,10 +98,8 @@ def main(num_loader_workers=0, batch_size=1024):
                 sort_by="cuda_time_total", row_limit=10
             )
             print(gpu_profile)
-
-        run_details = f"num-workers-{num_loader_workers}-batch-size-{batch_size}"
-        file_path = Path(f"profiler-output/{run_details}")
-        file_path.mkdir(parents=True)
+        else:
+            gpu_profile = None
         
         write_key_averages(
             file_path=file_path, cpu_profile=cpu_profile, gpu_profile=gpu_profile
