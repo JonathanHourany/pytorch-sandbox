@@ -23,9 +23,29 @@ waiting on the data pipeline.
   profiling traces, this appears as many short-lived kernels (often < 50–100 µs) with
   low overall utilization.
 
-## Backward Pass Imbalance
+## Mixed Precision Tensors
 
-...
+The `float32` (FP32) data type uses 23 bits for the significand (mantissa), which gives
+high precision but is often unnecessary for deep learning workloads. In many cases,
+we can achieve significant speedups and memory savings by using `bfloat16` (BF16).
+
+Like FP32, BF16 uses 8 bits for the exponent, so it maintains the same dynamic range
+(i.e., it can represent equally large and small numbers). However, it only allocates
+7 bits to the significand, which reduces numerical precision. This tradeoff allows
+for major efficiency gains:
+
+- **Memory Bandwidth**: Twice as many values can be transferred between host and
+  device compared to FP32, reducing data movement bottlenecks.
+- **Data Processing**: Registers can pack twice as many BF16 values, and modern
+  accelerators (e.g., NVIDIA Tensor Cores, Google TPUs) can perform up to 4× more
+  16-bit operations than 32-bit ones.
+
+Together, these improvements can dramatically reduce training time. In practice,
+enabling **mixed precision training** (FP16 or BF16 for most operations, FP32 for
+critical ones like loss scaling) often cuts training time nearly in half. Profiler
+output for the script in this folder shows total CUDA time reduced by ~50% when using
+mixed precision compared to full precision.precision.
+
 
 ## Kernel Launch Overhead
 

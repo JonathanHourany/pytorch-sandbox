@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 from typing import Iterable
@@ -18,6 +19,10 @@ from transformers import AutoTokenizer
 # Huggingface token paralelism is the easiest way to avoid seeing Huggingface's
 # warnings.
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+)
 
 
 class GPT2Dataset(Dataset):
@@ -98,7 +103,7 @@ def train_mixed_precision(
     scaler.step(optimizer)
     scaler.update()
     optimizer.zero_grad()
-    
+
     return loss
 
 
@@ -111,7 +116,7 @@ def train_full_precision(model, X, y, vocab_size, criterion, optimizer, device):
 
     optimizer.step()
     optimizer.zero_grad()
-    
+
     return loss
 
 
@@ -123,8 +128,12 @@ def main(
     mixed_precision_mode: bool = False,
 ):
     print_cuda_prof = False
+
+    ## Set up file names and paths for exporting profiling runs
     precision_mode = "mixed-precision" if mixed_precision_mode else "full-precision"
-    run_details = f"{precision_mode}-num-workers-{num_loader_workers}-batch-size-{batch_size}"
+    run_details = (
+        f"{precision_mode}-num-workers-{num_loader_workers}-batch-size-{batch_size}"
+    )
     file_path = Path(f"profiler-output/{run_details}")
     file_path.mkdir(parents=True)
 
@@ -132,9 +141,9 @@ def main(
         device = torch.device("cuda")
         print_cuda_prof = True
     else:
-        # logging.warning(
-        #     "Properly profiling this code requires a GPU. These results may not demo what is expected"
-        # )
+        logging.warning(
+            "Properly profiling this code requires a GPU. These results may not demo what is expected"
+        )
         device = torch.device("cpu")
 
     tokenizer = AutoTokenizer.from_pretrained("gpt2")
