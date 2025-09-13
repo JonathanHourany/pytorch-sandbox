@@ -42,7 +42,7 @@ for major efficiency gains:
 
 Together, these improvements can dramatically reduce training time. In practice,
 enabling **mixed precision training** (FP16 or BF16 for most operations, FP32 for
-critical ones like loss scaling) often cuts training time nearly in half. Profiler
+critical ones like loss scaling) often cuts training time significantly. Profiler
 output for the script in this folder shows total CUDA time reduced by ~50% when using
 mixed precision compared to full precision.precision.
 

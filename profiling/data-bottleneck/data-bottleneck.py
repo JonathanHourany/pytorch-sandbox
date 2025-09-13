@@ -1,3 +1,12 @@
+"""
+Demonstrates how data bottlenecks effect utilization and efficiency. Examining the
+trace output when the number of workers on the Dataloader is low shows that there are
+significant gaps between kernels while the GPU waits for data and the kernels
+themselves are short lived when the batch size is too small since they processes the
+small amount of data they are given quickly
+
+@author: Jonathan Hourany
+"""
 import logging
 import torch
 import torch.nn as nn

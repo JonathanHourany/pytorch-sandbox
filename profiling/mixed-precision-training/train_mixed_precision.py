@@ -1,3 +1,11 @@
+"""
+Demonstrates the difference in training between using full precision and mixed
+precision in PyTorch. Inspecting profiling output shows the GPU total time is cut in
+half when trained using mixed precision
+
+@author: Jonathan Hourany
+"""
+
 import logging
 import os
 from pathlib import Path
@@ -220,7 +228,7 @@ def main(
                 prof.step()
 
             avg_epoch_loss = epoch_loss / len(dataloader.dataset)
-            print(f"Avg Epoch Loss: {avg_epoch_loss.item():.4f}")
+            print(f"Epoch: {epoch} | Avg Epoch Loss: {avg_epoch_loss.item():.4f}")
 
         print("=" * 20)
         cpu_profile = prof.key_averages().table(sort_by="cpu_time_total", row_limit=10)
