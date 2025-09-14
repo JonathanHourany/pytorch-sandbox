@@ -23,8 +23,8 @@ from transformers import AutoTokenizer
 
 ## Note: The proper way to handle forked multi-threaded tokenization would be to move
 # the encoding stage in the Dataset class from the __init__ into the __getitem__ which
-# has the added benifit of saving memory. For small datasets and quick demos, disabling
-# Huggingface token paralelism is the easiest way to avoid seeing Huggingface's
+# has the added benefit of saving memory. For small datasets and quick demos, disabling
+# Huggingface token parallelism is the easiest way to avoid seeing Huggingface's
 # warnings.
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
