@@ -1,3 +1,12 @@
+"""
+Demonstrates how data bottlenecks effect utilization and efficiency. Examining the
+trace output when the number of workers on the Dataloader is low shows that there are
+significant gaps between kernels while the GPU waits for data and the kernels
+themselves are short lived when the batch size is too small since they processes the
+small amount of data they are given quickly
+
+@author: Jonathan Hourany
+"""
 import logging
 import torch
 import torch.nn as nn
@@ -41,7 +50,9 @@ def write_key_averages(file_path: Path, cpu_profile, gpu_profile=None):
 
 def main(num_loader_workers=0, batch_size=1024):
     print_cuda_prof = False
-    gpu_profile = None
+    run_details = f"num-workers-{num_loader_workers}-batch-size-{batch_size}"
+    file_path = Path(f"profiler-output/{run_details}")
+    file_path.mkdir(parents=True)
 
     if torch.cuda.is_available():
         device = torch.device("cuda")
@@ -63,7 +74,7 @@ def main(num_loader_workers=0, batch_size=1024):
     model = ToyModel().to(device)
     criterion = nn.BCEWithLogitsLoss()
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
-
+    
     with profile(
         activities=(ProfilerActivity.CPU, ProfilerActivity.CUDA),
         schedule=prof_schedule,
@@ -73,8 +84,8 @@ def main(num_loader_workers=0, batch_size=1024):
         record_shapes=True,
     ) as prof:
         for X, y in loader:
-            X = X.to(device)
-            y = y.to(device)
+            X = X.to(device, non_blocking=True)
+            y = y.to(device, non_blocking=True)
 
             preds = model(X)
 
@@ -96,10 +107,8 @@ def main(num_loader_workers=0, batch_size=1024):
                 sort_by="cuda_time_total", row_limit=10
             )
             print(gpu_profile)
-
-        run_details = f"num-workers-{num_loader_workers}-batch-size-{batch_size}"
-        file_path = Path(f"profiler-output/{run_details}")
-        file_path.mkdir(parents=True)
+        else:
+            gpu_profile = None
         
         write_key_averages(
             file_path=file_path, cpu_profile=cpu_profile, gpu_profile=gpu_profile
